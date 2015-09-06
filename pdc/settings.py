@@ -262,6 +262,12 @@ MESSAGE_BUS = {
     # 'KEY_FILE': '',
 }
 
+# Send email configuration
+ADMINS = (('PDC Dev', 'pnt-pdc@redhat.com'),)
+EMAIL_HOST = 'smtp.corp.redhat.com'
+SERVER_EMAIL = 'noreply@redhat.com'
+EMAIL_SUBJECT_PREFIX = '[PDC]'
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
@@ -291,11 +297,11 @@ LOGGING = {
             'delay': True,
         },
         # Send a warning email if we want it.
-        # 'mail_admins': {
-        #     'level': 'ERROR',
-        #     'class': 'django.utils.log.AdminEmailHandler',
-        #     'include_html': True,
-        # }
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+            'include_html': True,
+        }
     },
     'loggers': {
         'pdc': {

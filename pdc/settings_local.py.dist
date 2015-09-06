@@ -89,3 +89,13 @@ BROWSABLE_DOCUMENT_MACROS = {
     # make consistent with rest api root.
     'API_PATH': '%s%s' % (REST_API_URL, REST_API_VERSION),
 }
+
+def get_setting(setting):
+    import settings
+    return getattr(settings, setting)
+
+# un-comment below 4 lines if enable email notification as meet any error log
+# get_setting('LOGGING').get('loggers').update({'pdc.apps.common.handlers': {
+#     'handlers': ['mail_admins'],
+#     'level': 'ERROR',
+# }})
