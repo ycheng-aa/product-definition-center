@@ -262,10 +262,13 @@ MESSAGE_BUS = {
     # 'KEY_FILE': '',
 }
 
-# Send email configuration
-ADMINS = (('PDC Dev', 'pnt-pdc@redhat.com'),)
-EMAIL_HOST = 'smtp.corp.redhat.com'
-SERVER_EMAIL = 'noreply@redhat.com'
+# ======== Email configuration =========
+# Email addresses who would like to receive email
+ADMINS = (('PDC Dev', 'pdc@example.com'),)
+# Email SMTP HOST configuration
+EMAIL_HOST = 'smtp.example.com'
+# Email sender's address
+SERVER_EMAIL = 'noreply@example.com'
 EMAIL_SUBJECT_PREFIX = '[PDC]'
 
 LOGGING = {
