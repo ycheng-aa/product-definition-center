@@ -25,57 +25,32 @@ def dependency_filter(type, queryset, value):
     for dep in models.Dependency.objects.filter(type=type, name=groups['name']):
 
         is_equal = dep.is_equal(groups['version']) if groups['version'] else False
+        is_lower = dep.is_lower(groups['version']) if groups['version'] else False
+        is_higher = dep.is_higher(groups['version']) if groups['version'] else False
 
-        if groups['op'] == '=':
-            if not dep.is_satisfied_by(groups['version']):
-                queryset = queryset.exclude(pk=dep.rpm_id)
+        if groups['op'] == '=' and not dep.is_satisfied_by(groups['version']):
+            queryset = queryset.exclude(pk=dep.rpm_id)
 
         # User requests everything depending on higher than X
-        elif groups['op'] == '>':
-            if dep.comparison == '>' or dep.comparison == '>=':
-                # Same direction, does not limit anything
-                pass
-            elif dep.comparison == '<' and (dep.is_lower(groups['version']) or is_equal):
-                queryset = queryset.exclude(pk=dep.rpm_id)
-            elif dep.comparison == '<=' and (dep.is_lower(groups['version']) or is_equal):
-                queryset = queryset.exclude(pk=dep.rpm_id)
-            elif dep.comparison == '=' and (dep.is_lower(groups['version']) or is_equal):
-                queryset = queryset.exclude(pk=dep.rpm_id)
+        elif groups['op'] == '>' and dep.comparison in ('<', '<=', '=') and (is_lower or is_equal):
+            queryset = queryset.exclude(pk=dep.rpm_id)
 
         # User requests everything depending on lesser than X
-        elif groups['op'] == '<':
-            if dep.comparison == '<' or dep.comparison == '<=':
-                # Same direction, does not limit anything
-                pass
-            elif dep.comparison == '>' and (dep.is_higher(groups['version']) or is_equal):
-                queryset = queryset.exclude(pk=dep.rpm_id)
-            elif dep.comparison == '>=' and (dep.is_higher(groups['version']) or is_equal):
-                queryset = queryset.exclude(pk=dep.rpm_id)
-            elif dep.comparison == '=' and (dep.is_higher(groups['version']) or is_equal):
-                queryset = queryset.exclude(pk=dep.rpm_id)
+        elif groups['op'] == '<' and dep.comparison in ('>', '>=', '=') and (is_higher or is_equal):
+            queryset = queryset.exclude(pk=dep.rpm_id)
 
         # User requests everything depending on at least X
         elif groups['op'] == '>=':
-            if dep.comparison == '>' or dep.comparison == '>=':
-                # Same direction, does not limit anything
-                pass
-            elif dep.comparison == '<' and (dep.is_lower(groups['version']) or is_equal):
+            if dep.comparison == '<' and (is_lower or is_equal):
                 queryset = queryset.exclude(pk=dep.rpm_id)
-            elif dep.comparison == '<=' and dep.is_lower(groups['version']):
-                queryset = queryset.exclude(pk=dep.rpm_id)
-            elif dep.comparison == '=' and dep.is_lower(groups['version']):
+            elif dep.comparison in ('<=', '=') and is_lower:
                 queryset = queryset.exclude(pk=dep.rpm_id)
 
         # User requests everything depending on at most X
         elif groups['op'] == '<=':
-            if dep.comparison == '<' or dep.comparison == '<=':
-                # Same direction, does not limit anything
-                pass
-            elif dep.comparison == '>' and (dep.is_higher(groups['version']) or is_equal):
+            if dep.comparison == '>' and (is_higher or is_equal):
                 queryset = queryset.exclude(pk=dep.rpm_id)
-            elif dep.comparison == '>=' and dep.is_higher(groups['version']):
-                queryset = queryset.exclude(pk=dep.rpm_id)
-            elif dep.comparison == '=' and dep.is_higher(groups['version']):
+            elif dep.comparison in ('>=', '=') and is_higher:
                 queryset = queryset.exclude(pk=dep.rpm_id)
 
     return queryset

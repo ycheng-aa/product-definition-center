@@ -176,32 +176,50 @@ class Dependency(models.Model):
             # programmer error can cause this to fail.
             raise ValidationError('Bad version constraint: both version and comparison must be specified.')
 
-    def is_satisfied_by(self, other):
+    @property
+    def parsed_version(self):
         if not hasattr(self, '_version'):
             self._version = parse_epoch_version(self.version)
+        return self._version
+
+    def is_satisfied_by(self, other):
+        """
+        Check if other version satisfies this dependency.
+
+        :paramtype other: string
+        """
         funcs = {
-            '=': lambda x: x == self._version,
-            '<': lambda x: x < self._version,
-            '<=': lambda x: x <= self._version,
-            '>': lambda x: x > self._version,
-            '>=': lambda x: x >= self._version,
+            '=': lambda x: x == self.parsed_version,
+            '<': lambda x: x < self.parsed_version,
+            '<=': lambda x: x <= self.parsed_version,
+            '>': lambda x: x > self.parsed_version,
+            '>=': lambda x: x >= self.parsed_version,
         }
         return funcs[self.comparison](parse_epoch_version(other))
 
     def is_equal(self, other):
-        if not hasattr(self, '_version'):
-            self._version = parse_epoch_version(self.version)
-        return self._version == parse_epoch_version(other)
+        """
+        Return true if the other version is equal to version in this dep.
+
+        :paramtype other: string
+        """
+        return self.parsed_version == parse_epoch_version(other)
 
     def is_higher(self, other):
-        if not hasattr(self, '_version'):
-            self._version = parse_epoch_version(self.version)
-        return self._version > parse_epoch_version(other)
+        """
+        Return true if version in this dep is higher than the other version.
+
+        :paramtype other: string
+        """
+        return self.parsed_version > parse_epoch_version(other)
 
     def is_lower(self, other):
-        if not hasattr(self, '_version'):
-            self._version = parse_epoch_version(self.version)
-        return self._version < parse_epoch_version(other)
+        """
+        Return true if version in this dep is lower than the other version.
+
+        :paramtype other: string
+        """
+        return self.parsed_version < parse_epoch_version(other)
 
 
 class ImageFormat(models.Model):
