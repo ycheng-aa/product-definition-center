@@ -80,7 +80,9 @@ class ChangesetViewSet(StrictQueryParamMixin,
                     {
                         {
                             "author": "xxx",
+                            "requested_on": "2015-02-03T05:50:49.387Z",
                             "committed_on": "2015-02-03T05:51:17.262Z",
+                            "duration": "27.875",
                             "changes": [
                                 {
                                     "id": 1
@@ -109,7 +111,9 @@ class ChangesetViewSet(StrictQueryParamMixin,
                         {
                             "id": 1
                             "author": "xxx",
+                            "requested_on": "2015-02-03T05:50:49.387Z",
                             "committed_on": "2015-02-03T05:51:17.262Z",
+                            "duration": "27.875",
                             "changes": [
                                 {
                                     "resource": "person",
@@ -150,7 +154,9 @@ class ChangesetViewSet(StrictQueryParamMixin,
             {
                 "id": 1,
                 "author": "xxx",
+                "requested_on": "2015-02-03T05:50:49.387Z",
                 "committed_on": "2015-02-03T05:51:17.262Z",
+                "duration": "27.875",
                 "changes": [
                    {
                        "resource": "person",
