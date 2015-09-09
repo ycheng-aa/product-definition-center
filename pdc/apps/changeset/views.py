@@ -68,6 +68,8 @@ class ChangesetViewSet(StrictQueryParamMixin,
 
         %(SERIALIZER)s
 
+        The unit for duration is second.
+
         __Example__:
 
             curl -H "Content-Type: application/json"  -X GET $URL:changeset-list$
@@ -146,6 +148,8 @@ class ChangesetViewSet(StrictQueryParamMixin,
         __Response__:
 
         %(SERIALIZER)s
+
+        The unit for duration is second.
 
         __Example__:
 
