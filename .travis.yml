@@ -24,8 +24,10 @@ script:
     - make flake8
     - bash verify-migrations.sh
 after_success:
+    #- if [ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" ]; then make deploy_doc; fi
+    # ONLY FOR DEMO
+    - make deploy_doc
     - coveralls
-    - if [ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" ]; then make deploy_doc; fi
 cache:
     directories:
         - $HOME/.cache/pip
@@ -33,5 +35,5 @@ before_cache:
     - rm -f $HOME/.cache/pip/log/debug.log
 env:
     global:
-    - GH_REPO="product-definition-center/product-definition-center"
-    - secure: "rM4IjcV6afLNFFLSFF7kuCRZXF0DVErrnD4/MXHQ71IFBLrOBf3Av7wT2kTVTWeeFKFy/mmtwcieWjGRzdmpLHK0lSkt9zaJslzvyHr5+uUzYKPGia0gSNzVx01pMQGYBxpNJZcx1I5j+xDj3TEFLoD5qinn5RGsnpHmyZcIytwF2h0LiOMxJF6aHeyp1poCrRa8duTL2Wl7nV5+kWAhcax9dToTA/eLjeiE4BpiaYgf0zcmW55SW51/C9fFaU0o0W4vgH36WhY8G7hWdG7CmcUgtKXlbVWDZKNihbCOzDynZ64N3KUZ2pr7XY/XfQbR14pp5xzwuVIQBytNcIAnodf2Ijfhq8C7mwvpZwyvsCW2ENq2Ld1rzJ4rNszW2sS2CTOglrI+g0yvFbKW2YwzTem0ltm/uDKLh1zhaWxWbAlV6Z1tIYMweSDs7JKGKc+ZnvmaOPkz9l3q21I2GKuXVBMrD9wTmcDLrbqbSXf5ZpnllFXzUUjILAehUWFGk6RNKqnzbnpOFbT76HF7j3D6AN2jtsizk9kh6vre80SkqINyXpi3UhlYhmNKEjSupE4Nuu46F4BnVp4q3kpHAUP4JhcuJNkhg7VA5u1u78ibH+SD+jsmOKJoEqorDGOOx/rUYHcC9nWIRMdHLw23PurMw63aUwdQ054wP1CQkZh0la8="
+    - GH_REPO="ycheng-aa/product-definition-center"
+    - secure: "wWJkzDvxs4fpFRpm6fUoTj0/akKd2vejlFE0+e5DMiFGIJkR9a27qwq8/OPCndNyrxS2ZD5LQXpscPEfeznNSZsD8Y/SHJciO4H8yuNqNpfvuJPLiE9EfshfPcWUn+Ljqdcq76aNZo+9BOuAK8dmmUeU/ValPy5hId7d1LULHuAdXyOTIuH1xD5AhfrgRy0AoimASPA1msk8EEj8XqpqKqQyxrOZ2z8sWkEzilCVyYNIxKJN9mSrt6CU0To84onUiyJpTMsYhZByN5f7lNfx2NZ2roQKYoRVXuH2EOSguF223JzXfys5BNZFUr9RKHk9DQvBQ3VhREVszmMkeB0jRl4o0ZDjJupLwMfvgBC8SljstgtlvPmOvxnDB/XzeDh4dZonPgiFBhnzzfLMfNpuVT3zKCgYAUBY0dfBDn6JM+zOcoYyOb295eFOUKNFxjsmxHimDdWJN965t/ElEAKG7hYNrTtAAcC5PgyeZAwpSXO3RfWnGroFgwnWTsgAUIrCAeSq/+AMhBwcCQIof5pReNcBJxbXsjA2j/WYKTrmWf006LBhH5IjEARlQpderKmLIyCMynb/ljqjLo6J/2Lgx0EXTx10vMqNbYOfGuN6YGADa671mhmp0uBZ1xj5ydEn6afjmGOKWAirK5AjbMbrUr99JvmpjZeQP/1zN//IKPw="
