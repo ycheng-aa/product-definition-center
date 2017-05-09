@@ -1,0 +1,284 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>8. Messaging &#8212; PDC fatal: No names found, cannot describe anything. documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     'fatal: No names found, cannot describe anything.',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="7. Deployment" href="deployment.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="deployment.html" title="7. Deployment"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PDC fatal: No names found, cannot describe anything. documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="messaging">
+<span id="id1"></span><h1>8. Messaging<a class="headerlink" href="#messaging" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>8.1. Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Messaging enables PDC to send out useful informations to message bus so that other
+systems can subscribe and deal with them.</p>
+<p>Current design is based on Django Middleware system, by implementing our MsgMiddleware,
+we could initialize a message queue for every incoming request during the <cite>process_request</cite>,
+and push generated messages into it while processing the request in the view,
+if no error occurs, before response get returned to user, we pop out all the messages
+and invoke <cite>Messenger</cite> to send them to the Message Bus.</p>
+<p>PDC Messaging Overview and Dataflow:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>                 <span class="n">User</span> <span class="n">Request</span>           <span class="n">User</span> <span class="n">Response</span>
+                      <span class="o">+</span>                      <span class="o">^</span>
+<span class="o">+-----+</span>               <span class="o">|</span>                      <span class="o">|</span>
+<span class="o">|</span> <span class="n">PDC</span> <span class="o">|</span>               <span class="o">|</span>                      <span class="o">|</span>
+<span class="o">+-----+-----------------------------------------------------------------+</span>
+<span class="o">|</span>                     <span class="n">v</span>                      <span class="o">|</span>                          <span class="o">|</span>
+<span class="o">|</span>   <span class="o">+---------------+</span> <span class="o">|</span>                      <span class="o">|</span>                          <span class="o">|</span>
+<span class="o">|</span>   <span class="o">|</span> <span class="n">MsgMiddleware</span> <span class="o">|</span> <span class="o">|</span>                      <span class="o">^</span>                          <span class="o">|</span>
+<span class="o">|</span>   <span class="o">+---------------+-------------------------------+</span>   <span class="o">+-----------+</span>   <span class="o">|</span>
+<span class="o">|</span>   <span class="o">|</span>                 <span class="o">|</span>                      <span class="o">|</span>      <span class="o">|</span>   <span class="o">|</span> <span class="n">Messenger</span> <span class="o">|</span>   <span class="o">|</span>
+<span class="o">|</span>   <span class="o">|</span>     <span class="o">+-----------</span><span class="n">v</span><span class="o">-+</span> <span class="n">Init</span>       <span class="o">+-------+----+</span> <span class="o">|</span>   <span class="o">+-----------+</span>   <span class="o">|</span>      <span class="n">Message</span>
+<span class="o">|</span>   <span class="o">|</span>     <span class="o">|</span> <span class="n">Process</span> <span class="n">Req</span> <span class="o">+-&gt;+</span>      <span class="o">+--&gt;</span><span class="n">Process</span> <span class="n">Rsp</span> <span class="o">+-----&gt;</span>           <span class="o">+--------&gt;</span> <span class="n">Bus</span>
+<span class="o">|</span>   <span class="o">|</span>     <span class="o">+-----------+-+</span>  <span class="o">|</span>      <span class="o">|</span>  <span class="o">+------------+</span> <span class="o">|</span>   <span class="o">|</span> <span class="o">+</span><span class="n">send_msg</span> <span class="o">|</span>   <span class="o">|</span>      <span class="n">Server</span>
+<span class="o">|</span>   <span class="o">|</span>                 <span class="o">|</span>    <span class="o">|</span>      <span class="o">^</span> <span class="n">Dequeue</span>  <span class="o">|</span>      <span class="o">|</span>   <span class="o">|</span>           <span class="o">|</span>   <span class="o">|</span>
+<span class="o">|</span>   <span class="o">+----------------------------------------^------+</span>   <span class="o">+-----------+</span>   <span class="o">|</span>
+<span class="o">|</span>                     <span class="o">|</span>    <span class="o">|</span>      <span class="o">|</span>          <span class="o">|</span>                          <span class="o">|</span>
+<span class="o">|</span>                     <span class="o">|</span> <span class="o">+--</span><span class="n">v</span><span class="o">------+---+</span>      <span class="o">|</span>                          <span class="o">|</span>
+<span class="o">|</span>                     <span class="o">|</span> <span class="o">|</span>  <span class="n">Msg</span> <span class="n">Queue</span>  <span class="o">|</span>      <span class="o">|</span>                          <span class="o">|</span>
+<span class="o">|</span>   <span class="o">+--------+</span>        <span class="o">|</span> <span class="o">+----+--------+</span>      <span class="o">^</span>                          <span class="o">|</span>
+<span class="o">|</span>   <span class="o">|</span>  <span class="n">View</span>  <span class="o">|</span>        <span class="o">|</span>      <span class="o">^</span> <span class="n">Enqueue</span>       <span class="o">|</span>                          <span class="o">|</span>
+<span class="o">|</span>   <span class="o">+--------+--------------------------------------+</span>                   <span class="o">|</span>
+<span class="o">|</span>   <span class="o">|</span>                 <span class="o">|</span>      <span class="o">|</span>               <span class="o">|</span>      <span class="o">|</span>                   <span class="o">|</span>
+<span class="o">|</span>   <span class="o">|</span>                 <span class="n">v</span> <span class="o">-----+--------------&gt;+</span>      <span class="o">|</span>                   <span class="o">|</span>
+<span class="o">|</span>   <span class="o">|</span>                                               <span class="o">|</span>                   <span class="o">|</span>
+<span class="o">|</span>   <span class="o">+-----------------------------------------------+</span>                   <span class="o">|</span>
+<span class="o">+-----------------------------------------------------------------------+</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="supported-messengers">
+<h2>8.2. Supported Messengers<a class="headerlink" href="#supported-messengers" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default"><div class="highlight"><pre><span></span>                                     <span class="o">+----------------------------------+</span>
+                                     <span class="o">|</span>           <span class="n">PDC</span> <span class="n">Messenger</span>          <span class="o">|</span>
+                                     <span class="o">+----------------------------------+</span>
+                                     <span class="o">|</span>  <span class="o">+</span> <span class="fm">__init__</span><span class="p">()</span>                    <span class="o">|</span>
+                                     <span class="o">|</span>  <span class="o">+</span> <span class="n">send_message</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>      <span class="o">|</span>
+                                     <span class="o">+----------------------------------+</span>
+                                         <span class="o">^</span>    <span class="o">^</span>       <span class="o">^</span>        <span class="o">^</span>    <span class="o">^</span>
+                                         <span class="o">|</span>    <span class="o">|</span>       <span class="o">|</span>        <span class="o">|</span>    <span class="o">|</span>
+               <span class="o">+-------------------------+</span>    <span class="o">|</span>       <span class="o">|</span>        <span class="o">|</span>    <span class="o">+-------------------------+</span>
+               <span class="o">|</span>                   <span class="o">+---------&gt;+</span>       <span class="o">|</span>        <span class="o">+&lt;---------+</span>                   <span class="o">|</span>
+               <span class="o">|</span>                   <span class="o">|</span>                  <span class="o">|</span>                   <span class="o">|</span>                   <span class="o">|</span>
+<span class="o">+--------------+-+</span> <span class="o">+---------------+----+</span> <span class="o">+-----------+--------+</span> <span class="o">+--------+--------------+</span> <span class="o">+--+--------------------+</span>
+<span class="o">|</span> <span class="n">DummyMessenger</span> <span class="o">|</span> <span class="o">|</span>  <span class="n">FedmsgMessenger</span>   <span class="o">|</span> <span class="o">|</span>  <span class="n">KombuMessenger</span>    <span class="o">|</span> <span class="o">|</span>    <span class="n">ProtonMessenger</span>    <span class="o">|</span> <span class="o">|</span>     <span class="n">StompMessenger</span>    <span class="o">|</span>
+<span class="o">+----------------+</span> <span class="o">+--------------------+</span> <span class="o">+--------------------+</span> <span class="o">+-----------------------+</span> <span class="o">+-----------------------+</span>
+</pre></div>
+</div>
+<p>There are five messengers that PDC provided, you should choose which one to use according to your messaging
+infrastructure. Also you could write your own messenger based on your own requirements.</p>
+<p>Once you got the answer what left is to configure <cite>MESSAGE_BUS</cite> item in the <cite>settings</cite> file accordingly.</p>
+<p>Following is the brief introduction of each messenger along with their settings examples, it will help you
+to know which one to use and how to configure it as well.</p>
+<ol class="arabic">
+<li><p class="first"><cite>DummyMessenger</cite> (Default)</p>
+<p>If you do not need to send messages out, you could just leave the <cite>MLP</cite> (Messaging Library Package) to empty string
+to use the <cite>DummyMessenger</cite>.</p>
+<p>e.g.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># Messaging Bus Config</span>
+<span class="n">MESSAGE_BUS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># MLP: Messaging Library Package</span>
+    <span class="s1">&#39;MLP&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><cite>FedmsgMessenger</cite></p>
+<p>If you want to send PDC messages to Fedora Infrastructure Message Bus, you should choose <cite>FedmsgMessenger</cite> by setting
+the <cite>MLP</cite> to &#8216;fedmsg&#8217;.</p>
+<p><cite>fedmsg</cite> needs to be installed.</p>
+<p><cite>FedmsgMessenger</cite> config example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># Messaging Bus Config</span>
+<span class="n">MESSAGE_BUS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># MLP: Messaging Library Package</span>
+    <span class="s1">&#39;MLP&#39;</span><span class="p">:</span> <span class="s1">&#39;fedmsg&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><cite>KombuMessenger</cite></p>
+<p><cite>Kombu</cite> is a messaging library for Python. It supports AMQP(v0.9) and several message server solutions by using
+pluggable transports.</p>
+<dl class="docutils">
+<dt>NOTE: Not support AMQP(v1.0), so if you&#8217;re using some messaging server implements AMQP(v1.0), like ActiveMQ, then</dt>
+<dd><p class="first last">you should use <cite>ProtonMessenger</cite> instead.</p>
+</dd>
+</dl>
+<p><cite>kombu</cite> and related transport client library(like <cite>py-amqp</cite>, <cite>librabbitmq</cite>, or <cite>qpid-python</cite>) need to be installed.</p>
+<p>To use <cite>KombuMessenger</cite>, you need to add some more items in the settings, including <cite>URL</cite> of
+the broker, <cite>EXCHANGE</cite> and <cite>OPTIONS</cite>.</p>
+<p>e.g.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># Messaging Bus Config</span>
+<span class="n">MESSAGE_BUS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># `kombu` config example:</span>
+    <span class="s1">&#39;MLP&#39;</span><span class="p">:</span> <span class="s1">&#39;kombu&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;URL&#39;</span><span class="p">:</span> <span class="s1">&#39;amqp://guest:guest@example.com:5672//&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;EXCHANGE&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;pdc&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;topic&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;durable&#39;</span><span class="p">:</span> <span class="kc">False</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;OPTIONS&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="c1"># Set these two items to config `kombu` to use ssl.</span>
+        <span class="s1">&#39;login_method&#39;</span><span class="p">:</span> <span class="s1">&#39;EXTERNAL&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ssl&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;ca_certs&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;keyfile&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;certfile&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;cert_reqs&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>  <span class="c1"># ssl.CERT_REQUIRED,</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><cite>ProtonMessenger</cite></p>
+<p>Qpid-Proton supports AMQP(v1.0), and as if you&#8217;re connecting to message server, like ActiveMQ, that supports
+AMQP(v1.0), <cite>ProtonMessenger</cite> should be your choice.</p>
+<p>NOTE: current implementation does not support multi endpoints failover.</p>
+<p><cite>qpid-proton</cite> needs to be installed.</p>
+<p><cite>ProtonMessenger</cite> config example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># Messaging Bus Config</span>
+<span class="n">MESSAGE_BUS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;MLP&#39;</span><span class="p">:</span> <span class="s1">&#39;proton&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;URL&#39;</span><span class="p">:</span> <span class="s1">&#39;amqps://example.com:5671/com.redhat.pdc&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CERT_FILE&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;KEY_FILE&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><cite>StompMessenger</cite> (Recommended)</p>
+<p><cite>STOMP</cite> is another message protocol that very simple and easy to implement as a client. So if <cite>STOMP</cite> over <cite>AMQP</cite> is
+acceptable for your application, we recommend you to use <cite>StompMessenger</cite> as it supports multi-endpoints failover.</p>
+<p><cite>stomp.py</cite> needs to be installed.</p>
+<p><cite>StompMessenger</cite> config example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># Messaging Bus Config</span>
+<span class="n">MESSAGE_BUS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># `stomp` config items:</span>
+    <span class="s1">&#39;MLP&#39;</span><span class="p">:</span> <span class="s1">&#39;stomp&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;HOST_AND_PORTS&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">&#39;stomp.example1.com&#39;</span><span class="p">,</span> <span class="mi">61613</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;stomp.example2.com&#39;</span><span class="p">,</span> <span class="mi">61613</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;stomp.example3.com&#39;</span><span class="p">,</span> <span class="mi">61613</span><span class="p">),</span>
+    <span class="p">],</span>
+    <span class="s1">&#39;TOPIC&#39;</span><span class="p">:</span> <span class="s1">&#39;pdc&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CERT_FILE&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;KEY_FILE&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="to-be-improved">
+<h2>8.3. To Be Improved<a class="headerlink" href="#to-be-improved" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Better Error handling</li>
+<li>Message structure refine</li>
+<li>Transaction based Messaging</li>
+<li>Persistent messages that failed to send out</li>
+<li>Non-blocking</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">8. Messaging</a><ul>
+<li><a class="reference internal" href="#overview">8.1. Overview</a></li>
+<li><a class="reference internal" href="#supported-messengers">8.2. Supported Messengers</a></li>
+<li><a class="reference internal" href="#to-be-improved">8.3. To Be Improved</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="deployment.html"
+                        title="previous chapter">7. Deployment</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/messaging.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="deployment.html" title="7. Deployment"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PDC fatal: No names found, cannot describe anything. documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2014-2015, PDC Devel Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.5.
+    </div>
+  </body>
+</html>

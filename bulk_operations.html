@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>2. Bulk operations &#8212; PDC fatal: No names found, cannot describe anything. documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     'fatal: No names found, cannot describe anything.',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="3. Setup development environment" href="development.html" />
+    <link rel="prev" title="1. Using API" href="using_api.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="development.html" title="3. Setup development environment"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="using_api.html" title="1. Using API"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PDC fatal: No names found, cannot describe anything. documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="bulk-operations">
+<span id="id1"></span><h1>2. Bulk operations<a class="headerlink" href="#bulk-operations" title="Permalink to this headline">¶</a></h1>
+<p>The REST API provides a way to perform many operations in a single request.
+However, all these operations in a single request must work with the same
+collection (e.g. <em>release components</em> or <em>products</em>).</p>
+<p>All these <em>bulk</em> operations are available on the resource list URL. Unless
+stated otherwise in the documentation for a particular resource, the bulk
+operation is implemented in terms of the standard call operating on a single
+item.</p>
+<p>The bulk call is atomic – all operations will be performed or none will.</p>
+<div class="section" id="create">
+<h2>2.1. Create<a class="headerlink" href="#create" title="Permalink to this headline">¶</a></h2>
+<p>The input to this call should be a list of JSON objects. The rules for the
+items in the list are same as when creating a single item in the collection.</p>
+<p>The items will be created in the order in which they were specified in the
+request.</p>
+<p>The response from this call will include a list of whatever would be returned
+by creating the resources one by one. The status code on success is <code class="docutils literal"><span class="pre">201</span>
+<span class="pre">CREATED</span></code>.</p>
+<p>Note that the only way in which the bulk create differs from regular create is
+the request data.</p>
+</div>
+<div class="section" id="delete">
+<h2>2.2. Delete<a class="headerlink" href="#delete" title="Permalink to this headline">¶</a></h2>
+<p>To delete multiple items in a collection, send a <code class="docutils literal"><span class="pre">DELETE</span></code> request to the list
+URL. The request should include a body which should be a list of identifiers of
+items to be deleted.</p>
+<p>The items will be deleted in the order in which they were specified in the
+request.</p>
+<p>The exact format of the identifier is collection specific. Generally it should
+be the identifier you would append to the URL to get a detail view of the item.</p>
+<p>On success the response will be <code class="docutils literal"><span class="pre">204</span> <span class="pre">NO</span> <span class="pre">CONTENT</span></code>.</p>
+</div>
+<div class="section" id="update">
+<h2>2.3. Update<a class="headerlink" href="#update" title="Permalink to this headline">¶</a></h2>
+<p>Updating multiple items is possible via the <code class="docutils literal"><span class="pre">PUT</span></code> or <code class="docutils literal"><span class="pre">PATCH</span></code> method
+directed to the list URL of a collection. In both cases, the request body
+should be a JSON object, where keys are identifiers of objects (same as for
+bulk delete) and their values describe desired changes.</p>
+<p>Exact format of the changes description is resource dependant. It should have
+the same structure as when updating a single item.</p>
+<p>Because JSON objects are not ordered, the order in which the items will be
+updated is not specified and can be different to what is specified in the
+request.</p>
+<p>On success the response will have the <code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code> status code. The response body
+will include a JSON object with the same structure as in the original request,
+only change descriptions will be replaced with whatever gets returned by the
+update method for single item. Note that if the requested change results in a
+change of the identifier, the response will still contain the old identifier
+with new value for the item.</p>
+</div>
+<div class="section" id="errors">
+<h2>2.4. Errors<a class="headerlink" href="#errors" title="Permalink to this headline">¶</a></h2>
+<p>If an error occurs during processing a bulk operation, all changes from the
+request will be aborted and no change log will be recorded. The status code of
+an error response depends on what went wrong.</p>
+<p>The structure of the response body should (in case of client errors) consist of
+a JSON object with the following structure.:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;detail&quot;</span><span class="p">:</span>             <span class="o">&lt;</span><span class="n">string</span><span class="o">|</span><span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;id_of_invalid_data&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">string</span><span class="o">|</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;invalid_data&quot;</span><span class="p">:</span>       <span class="nb">object</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">detail</span></code> key denotes a more precise description of the error. Its value
+is supplied by the single item manipulating function.</p>
+<p>The <code class="docutils literal"><span class="pre">id_of_invalid_data</span></code> describes which part of the request caused the error.
+For create, it is an integer index from the request array (starting from zero),
+for update or delete it is the identifier.</p>
+<p>The <code class="docutils literal"><span class="pre">invalid_data</span></code> contains the actual part of request that was invalid. It
+is only present when creating or updating.</p>
+<p>Please note that the processing always stops when encountering the first error.
+It may be very well possible that even when the reported error is fixed, the
+request will fail with another error.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">2. Bulk operations</a><ul>
+<li><a class="reference internal" href="#create">2.1. Create</a></li>
+<li><a class="reference internal" href="#delete">2.2. Delete</a></li>
+<li><a class="reference internal" href="#update">2.3. Update</a></li>
+<li><a class="reference internal" href="#errors">2.4. Errors</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="using_api.html"
+                        title="previous chapter">1. Using API</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="development.html"
+                        title="next chapter">3. Setup development environment</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/bulk_operations.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="development.html" title="3. Setup development environment"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="using_api.html" title="1. Using API"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PDC fatal: No names found, cannot describe anything. documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2014-2015, PDC Devel Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.5.
+    </div>
+  </body>
+</html>
